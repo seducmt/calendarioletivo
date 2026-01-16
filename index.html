@@ -28,7 +28,7 @@
             color: var(--text-color);
             margin: 0;
             padding: 20px;
-            padding-top: 380px; /* Aumentei um pouco para caber o menu */
+            padding-top: 380px; 
         }
 
         /* --- DASHBOARD --- */
@@ -149,17 +149,18 @@
         }
 
         /* Classes Visuais */
-        .day[data-color="letivo"] { background-color: var(--c-letivo); color: white; }
-        .day[data-color="feriado"] { background-color: var(--c-feriado); color: white; }
-        .day[data-color="ferias"] { background-color: var(--c-ferias); color: #000; }
-        .day[data-color="conselho"] { background-color: var(--c-conselho); color: white; }
-        .day[data-color="facultativo"] { background-color: var(--c-facultativo); color: white; }
-        .day[data-color="pedagogica"] { background-color: var(--c-pedagogica); color: #000; }
+        .day[data-color="letivo"] { background-color: var(--c-letivo) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="feriado"] { background-color: var(--c-feriado) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="ferias"] { background-color: var(--c-ferias) !important; color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="conselho"] { background-color: var(--c-conselho) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="facultativo"] { background-color: var(--c-facultativo) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="pedagogica"] { background-color: var(--c-pedagogica) !important; color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         
-        .day[data-is-custom="true"] { color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .day[data-is-custom="true"] { color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         .day[data-text="red"] { color: #d00 !important; font-weight: 900; text-shadow: 1px 1px 0 #fff; }
         .day[data-pattern="evento"] {
             background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.4) 0, rgba(0,0,0,0.4) 2px, transparent 2px, transparent 8px);
+            -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
         }
 
         .day.weekend { color: #ccc; background-color: #fff; }
@@ -191,7 +192,8 @@
             .legends-footer { display: block; position: fixed; bottom: 0; left: 0; right: 0; background: white; padding-bottom: 0; }
             .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-bottom: 150px; }
             .month-card { box-shadow: none; border: 1px solid #666; page-break-inside: avoid; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            /* Forçar cores mais agressivamente */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
         }
     </style>
 </head>
@@ -201,7 +203,7 @@
         <div class="input-group">
             <input type="text" id="schoolNameInput" class="input-school" placeholder="Nome da Escola (Cabeçalho)">
             <button class="tool-btn btn-action btn-excel" onclick="downloadExcel()">📊 Baixar Excel</button>
-            <button class="tool-btn btn-action" onclick="window.print()">🖨️ PDF / Imprimir</button>
+            <button class="tool-btn btn-action" onclick="printPDF()">🖨️ PDF / Imprimir</button>
             <button class="tool-btn btn-action btn-reset" onclick="hardReset()">⚠ Resetar Tudo</button>
         </div>
 
@@ -212,7 +214,7 @@
             <button class="btn-add" onclick="addCustomCategory()">+ Criar</button>
         </div>
         
-        <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px; color:#555;">Legendas Padrão:</div>
+        <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px; color:#555;">Legendas Padrão (Clique para selecionar):</div>
         <div class="palette" id="palette-container">
             <button class="tool-btn btn-letivo active" onclick="selectTool('letivo', 'color')">Dia Letivo</button>
             <button class="tool-btn btn-feriado" onclick="selectTool('feriado', 'color')">Feriado</button>
@@ -284,7 +286,7 @@
     </div>
 
     <script>
-        // Bloco de segurança para garantir que o script não trave silenciosamente
+        // Bloco de segurança
         try {
             const year = 2026;
             const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -295,11 +297,9 @@
             let customColorHex = ''; 
             let customCategories = [];
 
-            // Tenta carregar categorias customizadas com segurança
             try {
                 customCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
             } catch (e) {
-                console.error("Erro ao ler categorias salvas, resetando...", e);
                 localStorage.setItem('customCategories', '[]');
             }
 
@@ -329,6 +329,12 @@
                 localStorage.setItem('schoolName', val);
             });
 
+            // --- FUNÇÃO DE IMPRESSÃO COM ALERTA ---
+            window.printPDF = function() {
+                alert("⚠️ ATENÇÃO IMPORTANTE ⚠️\n\nNa janela que vai abrir, procure por 'Mais definições' ou 'Opções' e MARQUE a caixinha:\n\n[ x ] Gráficos de segundo plano (Background graphics)\n\nSe não marcar isso, as cores (verde, azul, etc) NÃO sairão no PDF!");
+                window.print();
+            }
+
             // --- RESET TOTAL ---
             window.hardReset = function() {
                 if(confirm("Isso apagará TUDO e restaurará os feriados padrão. Continuar?")) {
@@ -340,6 +346,7 @@
             // --- DEFINIÇÃO DE FERIADOS E DATAS ESPECIAIS (2026) ---
             function applyInitialDefaults() {
                 const events = [
+                    // Feriados
                     { d: 1, m: 0, type: 'feriado' },   
                     { d: 3, m: 3, type: 'feriado' },   
                     { d: 21, m: 3, type: 'feriado' },  
@@ -351,6 +358,7 @@
                     { d: 20, m: 10, type: 'feriado' }, 
                     { d: 25, m: 11, type: 'feriado' }, 
 
+                    // Facultativos
                     { d: 2, m: 0, type: 'facultativo' },   
                     { d: 16, m: 1, type: 'facultativo' },  
                     { d: 17, m: 1, type: 'facultativo' },  
@@ -359,7 +367,13 @@
                     { d: 5, m: 5, type: 'facultativo' },   
                     { d: 28, m: 9, type: 'facultativo' },  
                     { d: 24, m: 11, type: 'facultativo' }, 
-                    { d: 31, m: 11, type: 'facultativo' }  
+                    { d: 31, m: 11, type: 'facultativo' },
+
+                    // CONSELHO DE CLASSE (NOVOS)
+                    { d: 17, m: 3, type: 'conselho' }, // 17 Abril
+                    { d: 29, m: 5, type: 'conselho' }, // 29 Junho
+                    { d: 28, m: 8, type: 'conselho' }, // 28 Setembro
+                    { d: 11, m: 11, type: 'conselho' } // 11 Dezembro
                 ];
 
                 for(let d=19; d<=30; d++) events.push({d: d, m: 0, type: 'pedagogica'});
@@ -367,14 +381,10 @@
 
                 events.forEach(evt => {
                     const id = `${year}-${evt.m}-${evt.d}`;
-                    // Força a escrita para garantir que apareça na primeira carga
                     let current = {};
-                    try {
-                        current = JSON.parse(localStorage.getItem(id) || '{}');
-                    } catch(e) { current = {}; }
+                    try { current = JSON.parse(localStorage.getItem(id) || '{}'); } catch(e) {}
                     
-                    // Só aplica se não tiver cor definida ou se for uma das cores padrão (para não sobrescrever customizações manuais antigas se não quiser)
-                    // Mas como o usuário pediu para "iniciar com", vamos forçar a cor:
+                    // Forçar cor inicial
                     current.color = evt.type;
                     localStorage.setItem(id, JSON.stringify(current));
                 });
@@ -382,10 +392,9 @@
 
             // --- GERAÇÃO DO GRID ---
             function generateCalendar() {
-                if(!container) return alert("Erro: Elemento do calendário não encontrado.");
+                if(!container) return alert("Erro crítico: Elemento #calendar-container não existe no HTML.");
                 container.innerHTML = "";
                 
-                // Aplica feriados antes de desenhar
                 applyInitialDefaults();
 
                 months.forEach((monthName, index) => {
