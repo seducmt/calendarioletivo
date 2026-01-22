@@ -2,153 +2,85 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca de Alunos - 2026</title>
+    <title>Busca de Alunos 2026</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #eef2f3; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #1a5276; text-align: center; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #7f8c8d; margin-bottom: 25px; }
+        input { width: 100%; padding: 15px; border: 2px solid #3498db; border-radius: 8px; font-size: 18px; outline: none; }
         #resultado { margin-top: 20px; }
-        .aluno-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        .aluno-item:last-child { border-bottom: none; }
-        .turma-tag { background: #3498db; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold; }
-        .count { font-size: 0.8em; color: #666; text-align: right; }
+        .aluno-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .aluno-nome { font-weight: 500; color: #2c3e50; }
+        .turma-tag { background: #3498db; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85em; font-weight: bold; min-width: 60px; text-align: center; }
+        .no-result { text-align: center; color: #95a5a6; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🔍 Localizar Estudante</h2>
-    <input type="text" id="busca" placeholder="Digite parte do nome..." onkeyup="buscar()">
-    <div class="count" id="contador"></div>
+    <h2>Sistema de Localização de Alunos</h2>
+    <p class="subtitle">Ensino Fundamental - Ano Letivo 2026</p>
+    
+    <input type="text" id="campoBusca" placeholder="Digite o nome do aluno..." onkeyup="filtrar()">
+    
     <div id="resultado"></div>
 </div>
 
 <script>
-// Dados consolidados pela coordenação
 const alunos = [
     // 6º ANO A
-    {nome: "Alice De Oliveira Da Fonseca", sala: "6º A"},
-    {nome: "Alice Julieta Alvarenga Da Silva", sala: "6º A"},
-    {nome: "Alícia Brazil Do Nascimento", sala: "6º A"},
-    {nome: "Ana Beatriz Quallio Garcia Monteiro", sala: "6º A"},
-    {nome: "Ana Camilly Silva Ferreira", sala: "6º A"},
-    {nome: "Ana Laura Arantes Flor", sala: "6º A"},
-    {nome: "Antonio Manuel Lopes Dos Santos", sala: "6º A"},
-    {nome: "Arthur Marques Longo", sala: "6º A"},
-    {nome: "Brayan Gabriel De Souza Alves", sala: "6º A"},
-    {nome: "Cristian Rafael De Souza", sala: "6º A"},
-    {nome: "Enzo Galvani Aguiar Luiz", sala: "6º A"},
-    {nome: "Evellyn Karolyne Silvestre Alves Lopes", sala: "6º A"},
-    {nome: "Felipe Espindola Mariano", sala: "6º A"},
-    {nome: "Guilherme Pereira De Andrade", sala: "6º A"},
-    {nome: "Hillary Sorti Pereira", sala: "6º A"},
-    {nome: "João Lucas Garcia De Freitas", sala: "6º A"},
-    {nome: "Jorge Wilson Oliveira Silva", sala: "6º A"},
-    {nome: "Laura Marques De Castro De Moura", sala: "6º A"},
-    {nome: "Lavinya Natalia Fontana Moreira", sala: "6º A"},
-    {nome: "Lucas Nunes Marques", sala: "6º A"},
-    {nome: "Luis Miguel Dos Santos Balsan", sala: "6º A"},
-    {nome: "Marcio Guilherme De Mendonça Aguiar", sala: "6º A"},
-    {nome: "Maria Clara Da Silva Nunes", sala: "6º A"},
-    {nome: "Miguel Antonio Lima Da Silva", sala: "6º A"},
-    {nome: "Miguel De Almeida Da Silva", sala: "6º A"},
-    {nome: "Pedro Emanuel da Costa", sala: "6º A"},
-    {nome: "Pedro Henrique Paukner Rodrigues", sala: "6º A"},
-    {nome: "Thauan Luciano Vieira Da Silva", sala: "6º A"},
-    {nome: "Vallentina Julien Alcantara Palheta", sala: "6º A"},
-    {nome: "Vitor Da Silva Sa", sala: "6º A"},
-    {nome: "Ysabella Vieira Cordeiro", sala: "6º A"},
+    {n: "Alice De Oliveira Da Fonseca", t: "6º A"}, {n: "Alice Julieta Alvarenga Da Silva", t: "6º A"}, {n: "Alícia Brazil Do Nascimento", t: "6º A"}, {n: "Ana Beatriz Quallio Garcia Monteiro", t: "6º A"}, {n: "Ana Camilly Silva Ferreira", t: "6º A"}, {n: "Ana Laura Arantes Flor", t: "6º A"}, {n: "Antonio Manuel Lopes Dos Santos", t: "6º A"}, {n: "Arthur Marques Longo", t: "6º A"}, {n: "Brayan Gabriel De Souza Alves", t: "6º A"}, {n: "Cristian Rafael De Souza", t: "6º A"}, {n: "Enzo Galvani Aguiar Luiz", t: "6º A"}, {n: "Evellyn Karolyne Silvestre Alves Lopes", t: "6º A"}, {n: "Felipe Espindola Mariano", t: "6º A"}, {n: "Guilherme Pereira De Andrade", t: "6º A"}, {n: "Hillary Sorti Pereira", t: "6º A"}, {n: "João Lucas Garcia De Freitas", t: "6º A"}, {n: "Jorge Wilson Oliveira Silva", t: "6º A"}, {n: "Laura Marques De Castro De Moura", t: "6º A"}, {n: "Lavinya Natalia Fontana Moreira", t: "6º A"}, {n: "Lucas Nunes Marques", t: "6º A"}, {n: "Luis Miguel Dos Santos Balsan", t: "6º A"}, {n: "Marcio Guilherme De Mendonça Aguiar", t: "6º A"}, {n: "Maria Clara Da Silva Nunes", t: "6º A"}, {n: "Miguel Antonio Lima Da Silva", t: "6º A"}, {n: "Miguel De Almeida Da Silva", t: "6º A"}, {n: "Pedro Emanuel da Costa", t: "6º A"}, {n: "Pedro Henrique Paukner Rodrigues", t: "6º A"}, {n: "Thauan Luciano Vieira Da Silva", t: "6º A"}, {n: "Vallentina Julien Alcantara Palheta", t: "6º A"}, {n: "Vitor Da Silva Sa", t: "6º A"}, {n: "Ysabella Vieira Cordeiro", t: "6º A"},
 
     // 6º ANO B
-    {nome: "Arthur Iocca Magalhães De Souza", sala: "6º B"},
-    {nome: "Carlos Henrique Martins De Souza", sala: "6º B"},
-    {nome: "Davi Lopes Banheza", sala: "6º B"},
-    {nome: "Eduardo Antunes De Freitas", sala: "6º B"},
-    {nome: "Eduardo Rezende Brito", sala: "6º B"},
-    {nome: "Evellyn Gabrieli Matos De Lima", sala: "6º B"},
-    {nome: "Gabrielle Suzany Marques Dos Santos", sala: "6º B"},
-    {nome: "Guilherme De Araújo Andrade", sala: "6º B"},
-    {nome: "Gustavo Antunes De Freitas", sala: "6º B"},
-    {nome: "Gustavo Ferreira Charles", sala: "6º B"},
-    {nome: "Higor Rafael Mendes Dos Santos", sala: "6º B"},
-    {nome: "Iasmim Ravanelli Da Silva", sala: "6º B"},
-    {nome: "Igor Daniel De Arruda Fernandes", sala: "6º B"},
-    {nome: "Isabella Gonçalves De Souza Machado", sala: "6º B"},
-    {nome: "Isadora Mouzinho Pio Da Silva", sala: "6º B"},
-    {nome: "Ithallo Ferreira Carioca", sala: "6º B"},
-    {nome: "Kaique Gatz Damasio", sala: "6º B"},
-    {nome: "Kayky Martins Rossi", sala: "6º B"},
-    {nome: "Larissa Menezes Machado", sala: "6º B"},
-    {nome: "Luis Gusttavo Lopes", sala: "6º B"},
-    {nome: "Maitê Oliveira Rodrigues Taruma Da Silva", sala: "6º B"},
-    {nome: "Marina Miranda Macedo", sala: "6º B"},
-    {nome: "Miguel Arcanjo Araujo De Andrade", sala: "6º B"},
-    {nome: "Miguel De Oliveira Da Silva", sala: "6º B"},
-    {nome: "Miguel Dos Santos Batista De Silva", sala: "6º B"},
-    {nome: "Nadhyne De Fatima Dos Santos Schutze", sala: "6º B"},
-    {nome: "Nathanael Baldez De Freitas", sala: "6º B"},
-    {nome: "Rafael Dos Reis Sergio", sala: "6º B"},
-    {nome: "Thayla Araujo De Oliveira", sala: "6º B"},
-    {nome: "Vitor Gabriel Da Silva Dos Santos", sala: "6º B"},
+    {n: "Arthur Iocca Magalhães De Souza", t: "6º B"}, {n: "Carlos Henrique Martins De Souza", t: "6º B"}, {n: "Davi Lopes Banheza", t: "6º B"}, {n: "Eduardo Antunes De Freitas", t: "6º B"}, {n: "Eduardo Rezende Brito", t: "6º B"}, {n: "Evellyn Gabrieli Matos De Lima", t: "6º B"}, {n: "Gabrielle Suzany Marques Dos Santos", t: "6º B"}, {n: "Guilherme De Araújo Andrade", t: "6º B"}, {n: "Gustavo Antunes De Freitas", t: "6º B"}, {n: "Gustavo Ferreira Charles", t: "6º B"}, {n: "Higor Rafael Mendes Dos Santos", t: "6º B"}, {n: "Iasmim Ravanelli Da Silva", t: "6º B"}, {n: "Igor Daniel De Arruda Fernandes", t: "6º B"}, {n: "Isabella Gonçalves De Souza Machado", t: "6º B"}, {n: "Isadora Mouzinho Pio Da Silva", t: "6º B"}, {n: "Ithallo Ferreira Carioca", t: "6º B"}, {n: "Kaique Gatz Damasio", t: "6º B"}, {n: "Kayky Martins Rossi", t: "6º B"}, {n: "Larissa Menezes Machado", t: "6º B"}, {n: "Luis Gusttavo Lopes", t: "6º B"}, {n: "Maitê Oliveira Rodrigues Taruma Da Silva", t: "6º B"}, {n: "Marina Miranda Macedo", t: "6º B"}, {n: "Miguel Arcanjo Araujo De Andrade", t: "6º B"}, {n: "Miguel De Oliveira Da Silva", t: "6º B"}, {n: "Miguel Dos Santos Batista De Silva", t: "6º B"}, {n: "Nadhyne De Fatima Dos Santos Schutze", t: "6º B"}, {n: "Nathanael Baldez De Freitas", t: "6º B"}, {n: "Rafael Dos Reis Sergio", t: "6º B"}, {n: "Thayla Araujo De Oliveira", t: "6º B"}, {n: "Vitor Gabriel Da Silva Dos Santos", t: "6º B"},
+
+    // 6º ANO C
+    {n: "Ana Cristina Falco Lessa", t: "6º C"}, {n: "Andressa Gonçalves Natio Da Silva", t: "6º C"}, {n: "Bianca Rampaso Ghellere", t: "6º C"}, {n: "Elias Gabriel Santos Silva", t: "6º C"}, {n: "Emanuelle Melo Da Silva", t: "6º C"}, {n: "Ester Miranda Da Silva", t: "6º C"}, {n: "Felipe Arouche Alves", t: "6º C"}, {n: "Heitor Rodrigues Matos", t: "6º C"}, {n: "Isadora Gabriely Alves", t: "6º C"}, {n: "Italo Belmiro Belai", t: "6º C"}, {n: "João Miguel De Morais Rodrigues", t: "6º C"}, {n: "Jose Miguel Tolentino De Andrade", t: "6º C"}, {n: "Jose Vitor Justo Colodel", t: "6º C"}, {n: "Julieny Pires Da Silva", t: "6º C"}, {n: "Kauê Emanuel Moreira Francio", t: "6º C"}, {n: "Lorenna Rodrigues Ferreira", t: "6º C"}, {n: "Luiz Otavio Felipes Trindade", t: "6º C"}, {n: "Manuela Fernanda Do Prado Vieira", t: "6º C"}, {n: "Maria Luíza De Souza André", t: "6º C"}, {n: "Mariana França Ferbonink", t: "6º C"}, {n: "Miguel Davi Lima Franco De Souza", t: "6º C"}, {n: "Monyke Lorena Do Nascimento Marques", t: "6º C"}, {n: "Nicolas Haruki De Farias Fusse", t: "6º C"}, {n: "Nicolas Raimundo Carvalho", t: "6º C"}, {n: "Pablo Dos Santos Epifanio", t: "6º C"}, {n: "Paolla De Souza Dos Santos", t: "6º C"}, {n: "Pedro Antonio Do Prado Chernhak", t: "6º C"}, {n: "Pedro Henrique Brito Da Silva", t: "6º C"}, {n: "Sofia Brazil De Souza", t: "6º C"}, {n: "Willians Oliveira Silva", t: "6º C"},
+
+    // 6º ANO D
+    {n: "Ana Julia De Freitas Fabiano", t: "6º D"}, {n: "Ana Julia Dias De Oliveira", t: "6º D"}, {n: "Ana Klara De Souza Agostini", t: "6º D"}, {n: "Ana Luiza Barboza de Araujo", t: "6º D"}, {n: "Ana Luyza Miranda Batista", t: "6º D"}, {n: "Anabelly Vitoria Da Silva De Lima", t: "6º D"}, {n: "Calebe Carvalho Do Nascimento", t: "6º D"}, {n: "Danielly Kurtz De Souza", t: "6º D"}, {n: "Davi Lucas Lima", t: "6º D"}, {n: "Eliezer Davi Cavalcante Dos Reis", t: "6º D"}, {n: "Emanoela Sousa Tavares", t: "6º D"}, {n: "Felipe Gabriel Medeiros Ribeiro", t: "6º D"}, {n: "Gabriel Junior Lopes De Oliveira", t: "6º D"}, {n: "Gabrielly Riguer Gonçalves", t: "6º D"}, {n: "Gustavo Noah Pelissari Ramos", t: "6º D"}, {n: "João Mauricio Rampazio De Souza", t: "6º D"}, {n: "Lara Luany Alves De Medeiros", t: "6º D"}, {n: "Laura Balsani Cezario Da Silva", t: "6º D"}, {n: "Leonardo Augusto Da Rocha", t: "6º D"}, {n: "Levi Silva Siqueira", t: "6º D"}, {n: "Luiz Carlos Andrade De Campos", t: "6º D"}, {n: "Luiz Gustavo Padilha Pereira", t: "6º D"}, {n: "Luiza Valentina Hack De Almeida", t: "6º D"}, {n: "Maria Clara Angst Ramos", t: "6º D"}, {n: "Maria Eduarda De Sá Mulizine", t: "6º D"}, {n: "Matheus Marques Do Amaral", t: "6º D"}, {n: "Nicolly Assumção Farias", t: "6º D"}, {n: "Rafaella Sant Anna Pedão", t: "6º D"}, {n: "Sophia Ferreira Rossi", t: "6º D"}, {n: "Sthefany Giovanna Cunha Lima", t: "6º D"}, {n: "Victor Moises Haubricht", t: "6º D"},
+
+    // 6º ANO E
+    {n: "Amanda Aragon de Paula", t: "6º E"}, {n: "Amarildo Moraes Junior", t: "6º E"}, {n: "Ana Vitória Magalhães Gaia", t: "6º E"}, {n: "Anna Vitoria Dos Santos De Souza", t: "6º E"}, {n: "Bianca Belucci Martins Da Silva", t: "6º E"}, {n: "Bryan Felipe Ferreira Dos Santos", t: "6º E"}, {n: "Débora Neves Pereira", t: "6º E"}, {n: "Emilliane Luiza Silvino", t: "6º E"}, {n: "Emily Oliveira Rocha", t: "6º E"}, {n: "Hanna Kimberly Colares Kamassury", t: "6º E"}, {n: "Heitor Novais Monteiro Dos Santos", t: "6º E"}, {n: "Henzo Gabriel Ximendes Rosa", t: "6º E"}, {n: "Isabela Sofia Candido Da Silva", t: "6º E"}, {n: "Isabelle Vitoria Leising Gonçalves", t: "6º E"}, {n: "Isis Amparo Veras", t: "6º E"}, {n: "Izabella Mello Calonga Martins", t: "6º E"}, {n: "João Miguel Dantas Niza", t: "6º E"}, {n: "Julia Moreira Pilger", t: "6º E"}, {n: "Laura Ishizuka Cremonezi", t: "6º E"}, {n: "Lorenzo Tamimori Da Cruz", t: "6º E"}, {n: "Lorenzzo Lucca Sanches dos Santos", t: "6º E"}, {n: "Luiza Valentina Souza Gonsalves", t: "6º E"}, {n: "Maryana Santos De Araujo", t: "6º E"}, {n: "Maykon Junior Santos De Araujo", t: "6º E"}, {n: "Miguel De Faria Mazurek", t: "6º E"}, {n: "Nicolas Marques De Souza", t: "6º E"}, {n: "Nicolly Silva Mendes Paulo", t: "6º E"}, {n: "Paulo Renato Francisco Neto", t: "6º E"}, {n: "Raimundo Nonato Silva Sousa", t: "6º E"}, {n: "Sophia Da Silva Marchiosi", t: "6º E"}, {n: "Yuri Dos Santos De Gouveia", t: "6º E"},
 
     // 7º ANO A
-    {nome: "Adrian Ribeiro Marcos", sala: "7º A"},
-    {nome: "Anally Yasmim De Oliveira Da Costa", sala: "7º A"},
-    {nome: "Bernardo Gomes Pinheiro Ferraz", sala: "7º A"},
-    {nome: "Daniel Kremer Da Silva", sala: "7º A"},
-    {nome: "Davi Vendramin Do Nascimento", sala: "7º A"},
-    {nome: "Eloa Maldonado Ribeiro", sala: "7º A"},
-    {nome: "Eloa Soares Paulo", sala: "7º A"},
-    {nome: "Emanuelly Da Silva De Lima", sala: "7º A"},
-    {nome: "Emily Emanuelli Silva Pereira", sala: "7º A"},
-    {nome: "Erick Ferreira Pittner", sala: "7º A"},
-    {nome: "Felipe Salatiel Vicentin", sala: "7º A"},
-    {nome: "Gabriel Justo Colodel", sala: "7º A"},
-    {nome: "Isabella Rodrigues Santos", sala: "7º A"},
-    {nome: "Joao Pedro Binotto Osviani", sala: "7º A"},
-    {nome: "João Vitor Oliveira Leandro", sala: "7º A"},
-    {nome: "José Miguel Alves Aleixo", sala: "7º A"},
-    {nome: "Laura de Souza Magevski das Dores", sala: "7º A"},
-    {nome: "Leticia Alves De Souza", sala: "7º A"},
-    {nome: "Lorena De Aguiar Isoton", sala: "7º A"},
-    {nome: "Lorena Wons Leandro", sala: "7º A"},
-    {nome: "Lorenzo Lopes De Oliveira", sala: "7º A"},
-    {nome: "Luiz Henrique Branco Florencio", sala: "7º A"},
-    {nome: "Maria Clara Juliana Dos Santos Kobayasi", sala: "7º A"},
-    {nome: "Maria Eduarda Dias Rolim", sala: "7º A"},
-    {nome: "Maria Rita Machado Schoenberger", sala: "7º A"},
-    {nome: "Marllon Pegoraro De Almeida", sala: "7º A"},
-    {nome: "Miguel Bosi Bairrada", sala: "7º A"},
-    {nome: "Murilo Leonel Cesar", sala: "7º A"},
-    {nome: "Pedro Henrique Mendonça Aguiar", sala: "7º A"},
-    {nome: "Rafael Gabatel Pinno", sala: "7º A"},
-    {nome: "Ruan Pablo De Andrade Fritzen", sala: "7º A"}
-    
-    // Adicione os demais conforme necessário seguindo o padrão acima
+    {n: "Adrian Ribeiro Marcos", t: "7º A"}, {n: "Anally Yasmim De Oliveira Da Costa", t: "7º A"}, {n: "Bernardo Gomes Pinheiro Ferraz", t: "7º A"}, {n: "Daniel Kremer Da Silva", t: "7º A"}, {n: "Davi Vendramin Do Nascimento", t: "7º A"}, {n: "Eloa Maldonado Ribeiro", t: "7º A"}, {n: "Eloa Soares Paulo", t: "7º A"}, {n: "Emanuelly Da Silva De Lima", t: "7º A"}, {n: "Emily Emanuelli Silva Pereira", t: "7º A"}, {n: "Erick Ferreira Pittner", t: "7º A"}, {n: "Felipe Salatiel Vicentin", t: "7º A"}, {n: "Gabriel Justo Colodel", t: "7º A"}, {n: "Isabella Rodrigues Santos", t: "7º A"}, {n: "Joao Pedro Binotto Osviani", t: "7º A"}, {n: "João Vitor Oliveira Leandro", t: "7º A"}, {n: "José Miguel Alves Aleixo", t: "7º A"}, {n: "Laura de Souza Magevski das Dores", t: "7º A"}, {n: "Leticia Alves De Souza", t: "7º A"}, {n: "Lorena De Aguiar Isoton", t: "7º A"}, {n: "Lorena Wons Leandro", t: "7º A"}, {n: "Lorenzo Lopes De Oliveira", t: "7º A"}, {n: "Luiz Henrique Branco Florencio", t: "7º A"}, {n: "Maria Clara Juliana Dos Santos Kobayasi", t: "7º A"}, {n: "Maria Eduarda Dias Rolim", t: "7º A"}, {n: "Maria Rita Machado Schoenberger", t: "7º A"}, {n: "Marllon Pegoraro De Almeida", t: "7º A"}, {n: "Miguel Bosi Bairrada", t: "7º A"}, {n: "Murilo Leonel Cesar", t: "7º A"}, {n: "Pedro Henrique Mendonça Aguiar", t: "7º A"}, {n: "Rafael Gabatel Pinno", t: "7º A"}, {n: "Ruan Pablo De Andrade Fritzen", t: "7º A"},
+
+    // 7º ANO B
+    {n: "Alícea Victoria Coronado", t: "7º B"}, {n: "Andressa Tomaz Tozi", t: "7º B"}, {n: "Arthur Sandim de Carvalho Tiburcio", t: "7º B"}, {n: "Athos Gabriel Ferreira Rodrigues", t: "7º B"}, {n: "Beatriz Garcia Berlanda", t: "7º B"}, {n: "Benjamin Quallio Dos Santos", t: "7º B"}, {n: "Brenda Castilho Israel Freire", t: "7º B"}, {n: "Cassio Miguel Ribeiro Pereira", t: "7º B"}, {n: "Dalmy Sophia Calixto Dos Santos", t: "7º B"}, {n: "Eliezer Lucas Pereira Novaes", t: "7º B"}, {n: "Emanuella Landim Neves", t: "7º B"}, {n: "Felipe Araujo Armi", t: "7º B"}, {n: "Francisco Reinaldo De Oliveira Dos Santos", t: "7º B"}, {n: "Gabriel Martins Delise", t: "7º B"}, {n: "Gabrielly Rosa Spiess da Silva", t: "7º B"}, {n: "Guilherme De Sá Amoresi", t: "7º B"}, {n: "Jhonatan Oliveira Brito Duarte", t: "7º B"}, {n: "João Guilherme de Souza Hanna", t: "7º B"}, {n: "João Guilherme Facin Loiola", t: "7º B"}, {n: "Julia Cristina Da Silva Rodrigues", t: "7º B"}, {n: "Lucas Gabriel Fontana De Abreu", t: "7º B"}, {n: "Maria Clara Leite Pereira", t: "7º B"}, {n: "Maria Heloisa Araujo Klann", t: "7º B"}, {n: "Maria Luiza Feitosa Braz", t: "7º B"}, {n: "Miguel Benitez Barbosa", t: "7º B"}, {n: "Pedro Henrique De Souza Ferro", t: "7º B"}, {n: "Samuel De Amorim Silva", t: "7º B"}, {n: "Sophia De Menezes Chamorro", t: "7º B"}, {n: "Sophia Leising Dionizio", t: "7º B"}, {n: "Valdecir Lucas Do Nascimento Lage", t: "7º B"}, {n: "Vitor Gabriel Luedke De Oliveira", t: "7º B"},
+
+    // 7º ANO C
+    {n: "Adrian Davi Gomes Vitor", t: "7º C"}, {n: "Alice Henrique Mendes", t: "7º C"}, {n: "Allan Augusto Mores Franca", t: "7º C"}, {n: "Amanda Tainá Ramos Bezerra Da Silva", t: "7º C"}, {n: "Ana Beatriz Menezes Da Costa", t: "7º C"}, {n: "Ana Beatriz Nascimento Veras", t: "7º C"}, {n: "Anny Vicença Da Silva Pego", t: "7º C"}, {n: "Antonio Gabriel Bispo De Souza", t: "7º C"}, {n: "Bryan Lucas Viana Moller", t: "7º C"}, {n: "Davi Henrique Diniz da Cruz", t: "7º C"}, {n: "Ester Emanuely Nascimento Rocha", t: "7º C"}, {n: "Giovana Scatambuli Rocha", t: "7º C"}, {n: "Gustavo Padovani Kuster", t: "7º C"}, {n: "Isadora Pereira Amancio", t: "7º C"}, {n: "Izadora Schmitz Coelli", t: "7º C"}, {n: "João Gabriel Duarte Da Rocha", t: "7º C"}, {n: "João Pedro De Andrade Fonseca", t: "7º C"}, {n: "José Arthur Da Silva Lobato", t: "7º C"}, {n: "José Miguel de Azevedo Otenio", t: "7º C"}, {n: "Julya dos Anjos Brambila", t: "7º C"}, {n: "Larissa Mehl Mourao Silveira", t: "7º C"}, {n: "Luis Miguel da Silva", t: "7º C"}, {n: "Maria Eduarda Paulino Martins", t: "7º C"}, {n: "Mateus Branco Da Silva", t: "7º C"}, {n: "Milena Korzekwa", t: "7º C"}, {n: "Natalia Luiza Arruda Dos Santos", t: "7º C"}, {n: "Pedro Henrique Scaqueti Martins", t: "7º C"}, {n: "Rian Kaik de Oliveira Saroa", t: "7º C"}, {n: "Ryan Miguel de Oliveira França", t: "7º C"}, {n: "Sophia Mantovani Santana", t: "7º C"}, {n: "Yuri Bueno Dos Santos", t: "7º C"},
+
+    // 7º ANO D
+    {n: "Aline Gomes Da Silva", t: "7º D"}, {n: "Ana Karolina Jacinto Valeri", t: "7º D"}, {n: "Anny Bianca De Souza Da Silva", t: "7º D"}, {n: "Arthur Eduardo Serafim Dos Santos", t: "7º D"}, {n: "Arthur Henrique Rosendo De Oliveira", t: "7º D"}, {n: "Arthur Lopes Faustino", t: "7º D"}, {n: "Barbara Aparecida Fernandes Da Silva", t: "7º D"}, {n: "Davi Taufmann Oliveira", t: "7º D"}, {n: "Emanuele Soares Veloso", t: "7º D"}, {n: "Gabriel Correa De Marco", t: "7º D"}, {n: "Geovana Macedo Da Silva", t: "7º D"}, {n: "Heloisa Silva Félix", t: "7º D"}, {n: "Henrique Bernardo Maciel Martins", t: "7º D"}, {n: "Isabely Melo Dos Santos", t: "7º D"}, {n: "João Pedro Marchilits Pinheiro", t: "7º D"}, {n: "Julia Nauane Ferreira Da Silva", t: "7º D"}, {n: "Leo Kronbauer Battirola Netto", t: "7º D"}, {n: "Luiz Felipe Pêgo Costa", t: "7º D"}, {n: "Luiza Wurfel De Lima", t: "7º D"}, {n: "Maria Vitoria De Azevedo Martins", t: "7º D"}, {n: "Mariana De Moraes Vargas", t: "7º D"}, {n: "Matheus Spina De Souza Hartwig", t: "7º D"}, {n: "Nathaly Gayoso Laranjeira", t: "7º D"}, {n: "Noemy Soares Simão De Souza", t: "7º D"}, {n: "Pedro Lucas Alves Antoniolli", t: "7º D"}, {n: "Samuel De Melo Paixão", t: "7º D"}, {n: "Sofia De Sales Parra", t: "7º D"}, {n: "Vivian Beatriz Borges Toniato", t: "7º D"}, {n: "Washington Luiz Ceballos Junior", t: "7º D"}, {n: "Yasmin Jeovana Martins Falquetti", t: "7º D"},
+
+    // 7º ANO E
+    {n: "Alana Vitória Camargo Cordeiro", t: "7º E"}, {n: "Alexya Vitoria Pereira Da Silva", t: "7º E"}, {n: "Ana Estela Viana Ricardo", t: "7º E"}, {n: "Ana Laura De Vargas Da Rocha", t: "7º E"}, {n: "Ana Luiza Pereira Atayde", t: "7º E"}, {n: "Arthur De Oliveira Arrabal", t: "7º E"}, {n: "Davi Luis Passos De Souza", t: "7º E"}, {n: "Davi Samuel Perin", t: "7º E"}, {n: "Denel Lorenzo Alexandretti", t: "7º E"}, {n: "Emanuelly Vitoria Maestro Da Silva", t: "7º E"}, {n: "Emilly Lopes Vital", t: "7º E"}, {n: "Felipe Moreira Brogio", t: "7º E"}, {n: "Fernando Schmitz Pereira", t: "7º E"}, {n: "Gabriel Oliveira Venancio", t: "7º E"}, {n: "Guilhermy Tallys Rocha Sandmann", t: "7º E"}, {n: "Henzo Ruan Dos Santos Pilger", t: "7º E"}, {n: "Isabely Valentina Castilho De Oliveira", t: "7º E"}, {n: "Izabel Barretos Barbosa Muller", t: "7º E"}, {n: "João Miguel De Sousa Rezende", t: "7º E"}, {n: "João Victor Silva Pereira", t: "7º E"}, {n: "Junior Alexandre Gunz Da Silva", t: "7º E"}, {n: "Livya Gabrielly Da Silva Nascimento", t: "7º E"}, {n: "Lucas Fellipe Saraiva Da Silva", t: "7º E"}, {n: "Ludymilla Laureth Pereira", t: "7º E"}, {n: "Maria Luiza Bernal De Farias", t: "7º E"}, {n: "Paulo Henrrique Silva Pereira", t: "7º E"}, {n: "Rebeca Mel Lopes Da Silva", t: "7º E"}, {n: "Renan Seze Dos Anjos", t: "7º E"}, {n: "Roberth Samuel Sousa De Sá", t: "7º E"}, {n: "Stella Sousa Marques", t: "7º E"}, {n: "Vitor Gabriel Neris Guechovski", t: "7º E"}
 ];
 
-function buscar() {
-    const termo = document.getElementById('busca').value.toLowerCase();
-    const resultadoDiv = document.getElementById('resultado');
-    const contador = document.getElementById('contador');
+function filtrar() {
+    const busca = document.getElementById('campoBusca').value.toLowerCase();
+    const resultDiv = document.getElementById('resultado');
     
-    if (termo.length < 2) {
-        resultadoDiv.innerHTML = "";
-        contador.innerHTML = "";
+    if (busca.length < 2) {
+        resultDiv.innerHTML = "";
         return;
     }
 
-    const filtrados = alunos.filter(a => a.nome.toLowerCase().includes(termo));
-    
-    contador.innerHTML = `${filtrados.length} aluno(s) encontrado(s)`;
-    resultadoDiv.innerHTML = filtrados.map(a => `
-        <div class="aluno-item">
-            <span>${a.nome}</span>
-            <span class="turma-tag">${a.sala}</span>
-        </div>
-    `).join('');
+    const filtrados = alunos.filter(a => a.n.toLowerCase().includes(busca));
+
+    if (filtrados.length === 0) {
+        resultDiv.innerHTML = "<div class='no-result'>Nenhum aluno encontrado com este nome.</div>";
+    } else {
+        resultDiv.innerHTML = filtrados.map(a => `
+            <div class="aluno-item">
+                <span class="aluno-nome">${a.n}</span>
+                <span class="turma-tag">${a.t}</span>
+            </div>
+        `).join('');
+    }
 }
 </script>
 
