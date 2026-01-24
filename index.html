@@ -121,6 +121,11 @@
             text-align: center; font-weight: 800; font-size: 10pt;
             text-transform: uppercase; color: #000; margin-bottom: 5px;
             background: #eee; padding: 4px; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        
+        .month-count {
+            font-size: 8pt; background: #333; color: #fff; padding: 1px 5px; border-radius: 4px; font-weight: normal;
         }
 
         .days-grid {
@@ -194,6 +199,8 @@
             .month-card { box-shadow: none; border: 1px solid #666; page-break-inside: avoid; }
             /* Forçar cores mais agressivamente */
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            
+            .month-count { border: 1px solid #000; background: #fff; color: #000; }
         }
     </style>
 </head>
@@ -376,27 +383,36 @@
                     { d: 11, m: 11, type: 'conselho' } 
                 ];
 
+                // Férias Janeiro (03-18)
+                for(let d=3; d<=18; d++) events.push({d: d, m: 0, type: 'ferias'});
+                
+                // Semana Pedagógica (19-30 Jan)
                 for(let d=19; d<=30; d++) events.push({d: d, m: 0, type: 'pedagogica'});
+                
+                // Férias Julho (06-20)
                 for(let d=6; d<=20; d++) events.push({d: d, m: 6, type: 'ferias'});
+
+                // Férias Dezembro (21, 22, 23, 26, 27, 28, 29, 30)
+                const feriasDez = [21, 22, 23, 26, 27, 28, 29, 30];
+                feriasDez.forEach(d => events.push({d: d, m: 11, type: 'ferias'}));
 
                 events.forEach(evt => {
                     const id = `${year}-${evt.m}-${evt.d}`;
                     let current = {};
                     try { current = JSON.parse(localStorage.getItem(id) || '{}'); } catch(e) {}
                     
-                    // Forçar cor inicial (se necessário sobrescrever)
                     current.color = evt.type;
                     localStorage.setItem(id, JSON.stringify(current));
                 });
 
-                // --- NOVOS MARCADORES AUTOMÁTICOS (IB/FB) ---
+                // --- MARCADORES AUTOMÁTICOS (IB/FB) ---
                 const autoTags = [
-                    // IB - Início Bimestre
+                    // IB
                     { d: 2, m: 1, tag: 'IB' },
                     { d: 23, m: 3, tag: 'IB' },
                     { d: 21, m: 6, tag: 'IB' },
                     { d: 2, m: 9, tag: 'IB' },
-                    // FB - Fim Bimestre
+                    // FB
                     { d: 22, m: 3, tag: 'FB' },
                     { d: 3, m: 6, tag: 'FB' },
                     { d: 1, m: 9, tag: 'FB' },
@@ -427,7 +443,8 @@
                     monthDiv.classList.add('month-card');
                     
                     const title = document.createElement('div');
-                    title.classList.add('month-title'); title.innerText = monthName;
+                    title.classList.add('month-title'); 
+                    title.innerHTML = `${monthName}`; 
                     monthDiv.appendChild(title);
                     
                     const grid = document.createElement('div'); grid.classList.add('days-grid');
@@ -523,7 +540,6 @@
                                 const dayOfWeek = new Date(year, m, currentDay).getDay();
                                 const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
-                                // 1. Se tem cor salva (Feriado, Conselho, Customizado)
                                 if(savedData.color && savedData.color !== 'none') {
                                     if(savedData.isCustom) {
                                         argbColor = 'FF' + savedData.color.replace('#', '').toUpperCase();
@@ -531,7 +547,6 @@
                                         argbColor = colorMap[savedData.color];
                                     }
                                 } 
-                                // 2. Se NÃO tem cor salva e NÃO é fim de semana, é Letivo (Verde)
                                 else if (!isWeekend) {
                                     argbColor = colorMap['letivo'];
                                 }
@@ -738,6 +753,7 @@
             }
 
             function updateCounters() {
+                // 1. Contagem por Bimestre (Rodapé)
                 let counts = { b1: 0, b2: 0, b3: 0, b4: 0, total: 0 };
                 const activeDays = document.querySelectorAll('.day[data-color="letivo"]');
                 activeDays.forEach(day => {
@@ -754,6 +770,14 @@
                 document.getElementById('count-b3').innerText = counts.b3;
                 document.getElementById('count-b4').innerText = counts.b4;
                 document.getElementById('count-total').innerText = counts.total;
+
+                // 2. Contagem por Mês (Título do Card)
+                const monthCards = document.querySelectorAll('.month-card');
+                monthCards.forEach((card, index) => {
+                    const letivoCount = card.querySelectorAll('.day[data-color="letivo"]').length;
+                    const title = card.querySelector('.month-title');
+                    title.innerHTML = `${months[index]} <span class="month-count">${letivoCount} dias</span>`;
+                });
             }
             
             // Inicializa o calendário
