@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário Escolar 2026 - Dinâmico</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --c-letivo: #2ecc71;
+            --c-feriado: #e74c3c;
+            --c-ferias: #f1c40f;
+            --c-conselho: #3498db;
+            --c-facultativo: #e67e22;
+            --c-pedagogica: #fd79a8;
+            --radius: 6px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            padding-top: 380px; 
+        }
+
+        /* --- DASHBOARD --- */
+        .dashboard {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-bottom: 2px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            max-height: 370px;
+        }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
+        
+        .input-school {
+            flex: 1; padding: 10px; font-size: 1rem; min-width: 250px;
+            border: 1px solid #ccc; border-radius: 6px;
+        }
+
+        .custom-creator {
+            background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px dashed #ccc;
+            display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;
+        }
+        .color-picker { border: none; width: 40px; height: 35px; cursor: pointer; background: none; padding: 0;}
+        .input-label { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px; }
+        .btn-add {
+            background: #333; color: white; border: none; padding: 0 15px; height: 35px;
+            border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+
+        .palette { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        
+        .tool-btn {
+            border: 2px solid transparent; padding: 6px 12px; border-radius: 20px;
+            cursor: pointer; font-size: 0.8rem; font-weight: bold; color: white;
+            display: flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .tool-btn:hover { filter: brightness(0.9); }
+        .tool-btn.active { border-color: #333; transform: scale(1.05); box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
+        
+        .tool-btn .btn-delete {
+            margin-left: 5px; font-size: 10px; background: rgba(0,0,0,0.3); 
+            border-radius: 50%; width: 18px; height: 18px; line-height: 18px; text-align: center;
+        }
+
+        /* Cores Fixas */
+        .btn-letivo { background: var(--c-letivo); }
+        .btn-feriado { background: var(--c-feriado); }
+        .btn-ferias { background: var(--c-ferias); color: #444; }
+        .btn-conselho { background: var(--c-conselho); }
+        .btn-facultativo { background: var(--c-facultativo); }
+        .btn-pedagogica { background: var(--c-pedagogica); color: #444; }
+        
+        .btn-evento { 
+            background-color: #fff;
+            background-image: repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%);
+            background-size: 10px 10px;
+            color: #333; border: 1px solid #999;
+        }
+        .btn-text-red { background: #fff; color: #e74c3c; border: 2px solid #e74c3c; font-weight: 900; }
+        .btn-tag { background: #eee; color: #333; border: 1px solid #ccc; font-size: 0.75rem; padding: 4px 8px; }
+        
+        .btn-action { background: #333; padding: 8px 15px; font-size: 0.9rem; }
+        .btn-excel { background: #217346; }
+        .btn-limpar { background: #95a5a6; }
+        .btn-reset { background: #c0392b; margin-left: auto; }
+
+        /* --- IMPRESSÃO --- */
+        .print-header { text-align: center; margin-bottom: 15px; display: none; }
+        .print-header h1 { margin: 0; font-size: 20pt; color: #000; text-transform: uppercase; line-height: 1.2; }
+        .print-header h2 { margin: 5px 0 0 0; font-size: 16pt; color: #333; text-transform: uppercase; font-weight: 600; }
+
+        .year-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .month-card {
+            background: var(--card-bg); border-radius: 8px; padding: 5px;
+            border: 1px solid #ddd; page-break-inside: avoid;
+        }
+
+        .month-title {
+            text-align: center; font-weight: 800; font-size: 10pt;
+            text-transform: uppercase; color: #000; margin-bottom: 5px;
+            background: #eee; padding: 4px; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        
+        .month-count {
+            font-size: 8pt; background: #333; color: #fff; padding: 1px 5px; border-radius: 4px; font-weight: normal;
+        }
+
+        .days-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center;
+        }
+
+        .weekday { font-size: 8pt; color: #666; font-weight: bold; margin-bottom: 2px; }
+
+        .day {
+            height: 28px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: var(--radius); cursor: pointer; font-size: 10pt; font-weight: 600;
+            background-color: #fff; position: relative; border: 1px solid transparent;
+        }
+        .day:hover { border-color: #666; z-index: 10; }
+        .day.empty { background: transparent; cursor: default; border: none; }
+        
+        .day-tags {
+            position: absolute; bottom: 0; right: 0;
+            display: flex; gap: 1px; justify-content: flex-end; width: 100%; pointer-events: none;
+        }
+        .tag-badge {
+            font-size: 5pt; font-weight: 900; background: rgba(255,255,255,0.95);
+            color: black; padding: 0 1px; border-radius: 2px; line-height: 1;
+            border: 0.5px solid #666; margin-right: 1px; margin-bottom: 1px;
+        }
+
+        /* Classes Visuais */
+        .day[data-color="letivo"] { background-color: var(--c-letivo) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="feriado"] { background-color: var(--c-feriado) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="ferias"] { background-color: var(--c-ferias) !important; color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="conselho"] { background-color: var(--c-conselho) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="facultativo"] { background-color: var(--c-facultativo) !important; color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-color="pedagogica"] { background-color: var(--c-pedagogica) !important; color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        
+        .day[data-is-custom="true"] { color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .day[data-text="red"] { color: #d00 !important; font-weight: 900; text-shadow: 1px 1px 0 #fff; }
+        .day[data-pattern="evento"] {
+            background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.4) 0, rgba(0,0,0,0.4) 2px, transparent 2px, transparent 8px);
+            -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+        }
+
+        .day.weekend { color: #ccc; background-color: #fff; }
+        .day.weekend[data-color], .day.weekend[data-is-custom="true"] { color: inherit; } 
+
+        /* --- FOOTER --- */
+        .legends-footer {
+            margin-top: 20px; padding-top: 10px; border-top: 2px solid #000;
+            display: none; font-family: Arial, sans-serif;
+        }
+        .legend-grid { display: flex; justify-content: space-between; align-items: flex-start; }
+        .legend-column { display: flex; flex-direction: column; gap: 8px; }
+        .legend-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 9pt; }
+        .color-box { width: 14px; height: 14px; border: 1px solid #000; border-radius: 2px; }
+        .tag-box { font-size: 7pt; font-weight: bold; border: 1px solid #000; padding: 1px 3px; border-radius: 2px; background: #fff; }
+        .hatch-box { background: #fff; background-image: repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 4px); }
+
+        .bimester-table { border-collapse: collapse; font-size: 9pt; width: 100%; min-width: 350px; }
+        .bimester-table td, .bimester-table th { border: 1px solid #000; padding: 4px 8px; text-align: left; }
+        .bimester-table th { background: #eee; text-align: center; }
+        .count-cell { text-align: center !important; font-weight: bold; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 5mm; }
+            body { background: white; padding: 0; margin: 0; zoom: 90%; }
+            .dashboard { display: none; }
+            .print-header { display: block; }
+            .legends-footer { display: block; position: fixed; bottom: 0; left: 0; right: 0; background: white; padding-bottom: 0; }
+            .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-bottom: 150px; }
+            .month-card { box-shadow: none; border: 1px solid #666; page-break-inside: avoid; }
+            /* Forçar cores mais agressivamente */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            
+            .month-count { border: 1px solid #000; background: #fff; color: #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="input-group">
+            <input type="text" id="schoolNameInput" class="input-school" placeholder="Nome da Escola (Cabeçalho)">
+            <button class="tool-btn btn-action btn-excel" onclick="downloadExcel()">📊 Baixar Excel</button>
+            <button class="tool-btn btn-action" onclick="printPDF()">🖨️ PDF / Imprimir</button>
+            <button class="tool-btn btn-action btn-reset" onclick="hardReset()">⚠ Resetar Tudo</button>
+        </div>
+
+        <div class="custom-creator">
+            <label style="font-size:0.9rem; font-weight:bold;">Legenda Personalizada:</label>
+            <input type="color" id="newColor" class="color-picker" value="#9b59b6">
+            <input type="text" id="newLabel" class="input-label" placeholder="Nome (Ex: Dia Santo)">
+            <button class="btn-add" onclick="addCustomCategory()">+ Criar</button>
+        </div>
+        
+        <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px; color:#555;">Legendas Padrão (Clique para selecionar):</div>
+        <div class="palette" id="palette-container">
+            <button class="tool-btn btn-letivo active" onclick="selectTool('letivo', 'color')">Dia Letivo</button>
+            <button class="tool-btn btn-feriado" onclick="selectTool('feriado', 'color')">Feriado</button>
+            <button class="tool-btn btn-ferias" onclick="selectTool('ferias', 'color')">Férias</button>
+            <button class="tool-btn btn-conselho" onclick="selectTool('conselho', 'color')">Conselho</button>
+            <button class="tool-btn btn-facultativo" onclick="selectTool('facultativo', 'color')">Facultativo</button>
+            <button class="tool-btn btn-pedagogica" onclick="selectTool('pedagogica', 'color')">Semana Pedagógica</button>
+        </div>
+        
+        <div style="font-size:0.8rem; font-weight:bold; margin:5px 0; color:#555;">Marcadores (Define o Bimestre):</div>
+        <div class="palette">
+            <button class="tool-btn btn-tag" style="background:#000;" onclick="selectTool('IB', 'tag')">IB (Início)</button>
+            <button class="tool-btn btn-tag" style="background:#000;" onclick="selectTool('FB', 'tag')">FB (Fim)</button>
+            <button class="tool-btn btn-tag" onclick="selectTool('RR', 'tag')">RR</button>
+            <button class="tool-btn btn-tag" onclick="selectTool('PD', 'tag')">PD</button>
+            <button class="tool-btn btn-tag" onclick="selectTool('AD', 'tag')">AD</button>
+            <button class="tool-btn btn-tag" onclick="selectTool('CD', 'tag')">CD</button>
+            
+            <button class="tool-btn btn-evento" onclick="selectTool('evento', 'pattern')">Rachurado</button>
+            <button class="tool-btn btn-text-red" onclick="selectTool('red', 'text')">T Vermelho</button>
+            <button class="tool-btn btn-limpar" onclick="selectTool('limpar', 'eraser')" style="margin-left:auto;">🧹 Borracha</button>
+        </div>
+    </div>
+
+    <div class="print-header">
+        <h1>Calendário Letivo 2026</h1>
+        <h2 id="printSchoolName">NOME DA ESCOLA</h2>
+    </div>
+
+    <div class="year-grid" id="calendar-container"></div>
+
+    <div class="legends-footer">
+        <div class="legend-grid">
+            <div class="legend-column" style="flex: 1;">
+                <div class="legend-row" id="legend-row-1">
+                    <div class="legend-item"><span class="color-box" style="background:var(--c-letivo)"></span> Dia Letivo</div>
+                    <div class="legend-item"><span class="color-box" style="background:var(--c-feriado)"></span> Feriado</div>
+                    <div class="legend-item"><span class="color-box" style="background:var(--c-ferias)"></span> Férias</div>
+                    <div class="legend-item"><span class="color-box" style="background:var(--c-conselho)"></span> Conselho</div>
+                    <div class="legend-item"><span class="color-box hatch-box"></span> Evento</div>
+                    <div class="legend-item"><span class="color-box" style="background:var(--c-facultativo)"></span> Facultativo</div>
+                    <div class="legend-item"><span class="color-box" style="background:var(--c-pedagogica)"></span> Semana Pedagógica</div>
+                </div>
+                <div style="margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;">
+                    <div class="legend-row">
+                        <div class="legend-item"><span class="tag-box">IB</span> Início Bimestre</div>
+                        <div class="legend-item"><span class="tag-box">FB</span> Fim Bimestre</div>
+                        <div class="legend-item"><span class="tag-box">RR</span> Reunião Pais</div>
+                        <div class="legend-item"><span class="tag-box">PD</span> Reunião Ped.</div>
+                        <div class="legend-item"><span class="tag-box">AD</span> Reunião Adm.</div>
+                        <div class="legend-item"><span class="tag-box">CD</span> Reunião CDCE</div>
+                    </div>
+                </div>
+            </div>
+            <div class="legend-column" style="margin-left: 30px;">
+                <table class="bimester-table">
+                    <thead>
+                        <tr><th>Bimestre</th><th>Período (Dinâmico)</th><th>Dias Letivos</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1º Bimestre</td><td id="period-b1">A definir</td><td class="count-cell" id="count-b1">0</td></tr>
+                        <tr><td>2º Bimestre</td><td id="period-b2">A definir</td><td class="count-cell" id="count-b2">0</td></tr>
+                        <tr><td>3º Bimestre</td><td id="period-b3">A definir</td><td class="count-cell" id="count-b3">0</td></tr>
+                        <tr><td>4º Bimestre</td><td id="period-b4">A definir</td><td class="count-cell" id="count-b4">0</td></tr>
+                        <tr style="background:#ddd;"><td colspan="2" style="text-align: right; font-weight:bold;">TOTAL:</td><td class="count-cell" id="count-total">0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bloco de segurança
+        try {
+            const year = 2026;
+            const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
+            
+            let currentTool = 'letivo'; 
+            let currentType = 'color'; 
+            let customColorHex = ''; 
+            let customCategories = [];
+
+            try {
+                customCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+            } catch (e) {
+                localStorage.setItem('customCategories', '[]');
+            }
+
+            const colorMap = {
+                'letivo': 'FF2ECC71',
+                'feriado': 'FFE74C3C',
+                'ferias': 'FFF1C40F',
+                'conselho': 'FF3498DB',
+                'facultativo': 'FFE67E22',
+                'pedagogica': 'FFFD79A8'
+            };
+
+            const container = document.getElementById('calendar-container');
+            const schoolInput = document.getElementById('schoolNameInput');
+            const schoolDisplay = document.getElementById('printSchoolName');
+
+            schoolInput.addEventListener('input', (e) => {
+                const val = e.target.value.toUpperCase();
+                schoolDisplay.innerText = val || "NOME DA ESCOLA";
+                localStorage.setItem('schoolName', val);
+            });
+
+            window.printPDF = function() {
+                alert("⚠️ ATENÇÃO IMPORTANTE ⚠️\n\nMarque a opção [ x ] Gráficos de segundo plano na janela de impressão para que as cores apareçam.");
+                window.print();
+            }
+
+            window.hardReset = function() {
+                if(confirm("Isso apagará TUDO. Continuar?")) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            }
+
+            // --- DEFAULTS ---
+            function applyInitialDefaults() {
+                // Apenas define as cores se não existirem
+                // A lógica de contagem agora não depende de arrays fixos, mas a inicialização coloca os IBs sugeridos
+                const events = [
+                    { d: 1, m: 0, type: 'feriado' }, { d: 3, m: 3, type: 'feriado' }, { d: 21, m: 3, type: 'feriado' },  
+                    { d: 1, m: 4, type: 'feriado' }, { d: 7, m: 8, type: 'feriado' }, { d: 12, m: 9, type: 'feriado' },  
+                    { d: 2, m: 10, type: 'feriado' }, { d: 15, m: 10, type: 'feriado' }, { d: 20, m: 10, type: 'feriado' }, 
+                    { d: 25, m: 11, type: 'feriado' }, 
+                    { d: 2, m: 0, type: 'facultativo' }, { d: 16, m: 1, type: 'facultativo' }, { d: 17, m: 1, type: 'facultativo' },  
+                    { d: 18, m: 1, type: 'facultativo' }, { d: 4, m: 5, type: 'facultativo' }, { d: 5, m: 5, type: 'facultativo' },   
+                    { d: 28, m: 9, type: 'facultativo' }, { d: 24, m: 11, type: 'facultativo' }, { d: 31, m: 11, type: 'facultativo' },
+                    { d: 17, m: 3, type: 'conselho' }, { d: 29, m: 5, type: 'conselho' }, { d: 28, m: 8, type: 'conselho' }, { d: 11, m: 11, type: 'conselho' } 
+                ];
+
+                for(let d=3; d<=18; d++) events.push({d: d, m: 0, type: 'ferias'});
+                for(let d=19; d<=30; d++) events.push({d: d, m: 0, type: 'pedagogica'});
+                for(let d=6; d<=20; d++) events.push({d: d, m: 6, type: 'ferias'});
+                [21, 22, 23, 26, 27, 28, 29, 30].forEach(d => events.push({d: d, m: 11, type: 'ferias'}));
+
+                events.forEach(evt => {
+                    const id = `${year}-${evt.m}-${evt.d}`;
+                    if (!localStorage.getItem(id)) {
+                        localStorage.setItem(id, JSON.stringify({ color: evt.type }));
+                    }
+                });
+
+                // Tags iniciais (apenas se virgem)
+                const autoTags = [
+                    { d: 2, m: 1, tag: 'IB' }, { d: 22, m: 3, tag: 'FB' },
+                    { d: 23, m: 3, tag: 'IB' }, { d: 3, m: 6, tag: 'FB' },
+                    { d: 21, m: 6, tag: 'IB' }, { d: 1, m: 9, tag: 'FB' },
+                    { d: 2, m: 9, tag: 'IB' }, { d: 18, m: 11, tag: 'FB' }
+                ];
+
+                autoTags.forEach(t => {
+                    const id = `${year}-${t.m}-${t.d}`;
+                    let current = JSON.parse(localStorage.getItem(id) || '{}');
+                    if (!current.tags) {
+                        current.tags = [t.tag];
+                        localStorage.setItem(id, JSON.stringify(current));
+                    }
+                });
+            }
+
+            // --- GERAÇÃO DO GRID ---
+            function generateCalendar() {
+                container.innerHTML = "";
+                applyInitialDefaults();
+
+                months.forEach((monthName, index) => {
+                    const monthDiv = document.createElement('div');
+                    monthDiv.classList.add('month-card');
+                    
+                    const title = document.createElement('div');
+                    title.classList.add('month-title'); 
+                    title.innerHTML = `${monthName}`; 
+                    monthDiv.appendChild(title);
+                    
+                    const grid = document.createElement('div'); grid.classList.add('days-grid');
+                    weekDays.forEach(wd => {
+                        const wdDiv = document.createElement('div'); wdDiv.classList.add('weekday'); wdDiv.innerText = wd; grid.appendChild(wdDiv);
+                    });
+
+                    const firstDay = new Date(year, index, 1).getDay();
+                    const daysInMonth = new Date(year, index + 1, 0).getDate();
+
+                    for (let i = 0; i < firstDay; i++) {
+                        const empty = document.createElement('div'); empty.classList.add('day', 'empty'); grid.appendChild(empty);
+                    }
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dayBtn = document.createElement('div'); dayBtn.classList.add('day');
+                        const numSpan = document.createElement('span'); numSpan.innerText = d; dayBtn.appendChild(numSpan);
+                        const tagsContainer = document.createElement('div'); tagsContainer.classList.add('day-tags'); dayBtn.appendChild(tagsContainer);
+                        
+                        const dayId = `${year}-${index}-${d}`; dayBtn.setAttribute('id', dayId);
+                        const dayOfWeek = new Date(year, index, d).getDay();
+                        if(dayOfWeek === 0 || dayOfWeek === 6) dayBtn.classList.add('weekend'); 
+                        else dayBtn.setAttribute('data-color', 'letivo');
+
+                        dayBtn.addEventListener('click', () => applyTool(dayBtn, dayId));
+                        grid.appendChild(dayBtn);
+                    }
+                    monthDiv.appendChild(grid); container.appendChild(monthDiv);
+                });
+                renderCustomUI();
+                loadData();
+            }
+
+            // --- HELPER DE DATA ---
+            function formatDate(date) {
+                if(!date) return "";
+                return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            }
+
+            // --- CÁLCULO DINÂMICO ---
+            function calculateBimesters() {
+                // 1. Encontrar todas as datas IB e FB no calendário atual (DOM)
+                // Percorre o ano todo para garantir ordem cronológica
+                let ibDates = [];
+                let fbDates = [];
+
+                for (let m = 0; m < 12; m++) {
+                    const daysInMonth = new Date(year, m + 1, 0).getDate();
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const id = `${year}-${m}-${d}`;
+                        const dayEl = document.getElementById(id);
+                        if (!dayEl) continue;
+
+                        const tags = Array.from(dayEl.querySelectorAll('.tag-badge')).map(s => s.innerText);
+                        const dateObj = new Date(year, m, d);
+
+                        if (tags.includes('IB')) ibDates.push(dateObj);
+                        if (tags.includes('FB')) fbDates.push(dateObj);
+                    }
+                }
+
+                // 2. Montar estrutura dos 4 bimestres
+                const results = [];
+                let totalLetivos = 0;
+
+                for (let i = 0; i < 4; i++) {
+                    const start = ibDates[i] || null;
+                    const end = fbDates[i] || null;
+                    let count = 0;
+                    let label = "Não definido";
+
+                    if (start && end) {
+                        label = `${formatDate(start)} a ${formatDate(end)}`;
+                        // Contar dias letivos neste intervalo
+                        let current = new Date(start);
+                        while (current <= end) {
+                            const cId = `${year}-${current.getMonth()}-${current.getDate()}`;
+                            const cEl = document.getElementById(cId);
+                            // Verifica se tem cor de "letivo" (padrão ou explicito) e não é feriado/fds sem letivo
+                            if (cEl) {
+                                const color = cEl.getAttribute('data-color');
+                                // A lógica visual é: se tem data-color="letivo", conta.
+                                // Se for fim de semana sem data-color, não conta.
+                                // Se tiver outra cor (feriado), não conta.
+                                if (color === 'letivo') count++;
+                            }
+                            current.setDate(current.getDate() + 1);
+                        }
+                    }
+                    
+                    results.push({ label, count });
+                    totalLetivos += count;
+                }
+
+                return { bimesters: results, total: totalLetivos };
+            }
+
+            // --- EXPORTAÇÃO EXCEL ---
+            window.downloadExcel = async function() {
+                try {
+                    if (typeof ExcelJS === 'undefined') return alert("Erro biblioteca Excel.");
+                    const workbook = new ExcelJS.Workbook();
+                    const sheet = workbook.addWorksheet('Calendario 2026');
+                    const schoolName = document.getElementById('printSchoolName').innerText;
+
+                    // Recalcula dados atuais
+                    const calcData = calculateBimesters();
+
+                    sheet.mergeCells('A1:U1');
+                    const titleCell = sheet.getCell('A1');
+                    titleCell.value = "CALENDÁRIO LETIVO 2026 - " + schoolName;
+                    titleCell.font = { name: 'Arial', size: 16, bold: true };
+                    titleCell.alignment = { horizontal: 'center' };
+
+                    const colOffsets = [0, 8, 16]; 
+                    for(let m = 0; m < 12; m++) {
+                        const rowBlock = Math.floor(m / 3);
+                        const colBlock = m % 3;
+                        const startRow = 3 + (rowBlock * 10); 
+                        const startCol = 1 + colOffsets[colBlock]; 
+
+                        const monthTitleCell = sheet.getCell(startRow, startCol);
+                        monthTitleCell.value = months[m].toUpperCase();
+                        monthTitleCell.font = { bold: true };
+                        sheet.mergeCells(startRow, startCol, startRow, startCol + 6);
+                        monthTitleCell.alignment = { horizontal: 'center' };
+                        monthTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEEEEE' } };
+
+                        weekDays.forEach((wd, i) => {
+                            const cell = sheet.getCell(startRow + 1, startCol + i);
+                            cell.value = wd;
+                            cell.font = { size: 9, bold: true, color: { argb: 'FF666666' } };
+                            cell.alignment = { horizontal: 'center' };
+                        });
+
+                        const firstDay = new Date(year, m, 1).getDay();
+                        const daysInMonth = new Date(year, m + 1, 0).getDate();
+                        let currentDay = 1;
+
+                        for (let w = 0; w < 6; w++) {
+                            for (let d = 0; d < 7; d++) {
+                                const cellRow = startRow + 2 + w;
+                                const cellCol = startCol + d;
+                                const cell = sheet.getCell(cellRow, cellCol);
+
+                                if ((w === 0 && d < firstDay) || currentDay > daysInMonth) continue;
+
+                                cell.value = currentDay;
+                                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
+                                const dayId = `${year}-${m}-${currentDay}`;
+                                const savedData = JSON.parse(localStorage.getItem(dayId) || '{}');
+                                
+                                let argbColor = null;
+                                const dayOfWeek = new Date(year, m, currentDay).getDay();
+                                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+                                if(savedData.color && savedData.color !== 'none') {
+                                    if(savedData.isCustom) argbColor = 'FF' + savedData.color.replace('#', '').toUpperCase();
+                                    else argbColor = colorMap[savedData.color];
+                                } else if (!isWeekend) {
+                                    argbColor = colorMap['letivo'];
+                                }
+
+                                if (!argbColor && isWeekend) cell.font = { color: { argb: 'FFCCCCCC' } };
+                                else if (argbColor) {
+                                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: argbColor } };
+                                    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+                                    if(savedData.color === 'ferias' || savedData.color === 'pedagogica') cell.font = { color: { argb: 'FF000000' }, bold: true };
+                                }
+
+                                if(savedData.text === 'red') cell.font = { color: { argb: 'FFFF0000' }, bold: true };
+                                if(savedData.tags && savedData.tags.length > 0) cell.note = savedData.tags.join(', ');
+                                currentDay++;
+                            }
+                        }
+                    }
+
+                    const footerRow = 45; 
+                    sheet.getCell(`A${footerRow}`).value = "TOTAL DIAS LETIVOS";
+                    sheet.getCell(`A${footerRow}`).font = { bold: true };
+
+                    const tableData = [
+                        ['1º Bimestre', calcData.bimesters[0].label, calcData.bimesters[0].count],
+                        ['2º Bimestre', calcData.bimesters[1].label, calcData.bimesters[1].count],
+                        ['3º Bimestre', calcData.bimesters[2].label, calcData.bimesters[2].count],
+                        ['4º Bimestre', calcData.bimesters[3].label, calcData.bimesters[3].count],
+                        ['TOTAL', '', calcData.total]
+                    ];
+
+                    tableData.forEach((row, i) => {
+                        sheet.getCell(`A${footerRow + 1 + i}`).value = row[0];
+                        sheet.getCell(`B${footerRow + 1 + i}`).value = row[1];
+                        sheet.getCell(`C${footerRow + 1 + i}`).value = row[2];
+                    });
+
+                    sheet.getCell(`E${footerRow}`).value = "LEGENDA:";
+                    sheet.getCell(`E${footerRow}`).font = { bold: true };
+                    
+                    const legendItems = [
+                        { name: 'Dia Letivo', color: colorMap['letivo'] },
+                        { name: 'Feriado', color: colorMap['feriado'] },
+                        { name: 'Férias', color: colorMap['ferias'] },
+                        { name: 'Conselho', color: colorMap['conselho'] },
+                        { name: 'Facultativo', color: colorMap['facultativo'] },
+                        { name: 'Semana Pedagógica', color: colorMap['pedagogica'] }
+                    ];
+
+                    customCategories.forEach(cat => legendItems.push({ name: cat.label, color: 'FF' + cat.color.replace('#', '').toUpperCase() }));
+
+                    legendItems.forEach((item, i) => {
+                        const r = footerRow + 1 + i;
+                        const cColor = sheet.getCell(`E${r}`);
+                        cColor.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: item.color } };
+                        sheet.getCell(`F${r}`).value = item.name;
+                    });
+
+                    sheet.columns.forEach(column => { column.width = 5; }); 
+                    sheet.getColumn(2).width = 15; 
+                    sheet.getColumn(6).width = 20;
+
+                    const buffer = await workbook.xlsx.writeBuffer();
+                    saveAs(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Calendario_${schoolName || '2026'}.xlsx`);
+                } catch (error) {
+                    alert("Erro ao gerar Excel: " + error.message);
+                }
+            }
+
+            // --- LÓGICA DO APP ---
+            window.addCustomCategory = function() {
+                const color = document.getElementById('newColor').value;
+                const label = document.getElementById('newLabel').value.trim();
+                if (!label) return alert("Digite um nome!");
+                customCategories.push({ id: 'custom_' + Date.now(), label, color });
+                localStorage.setItem('customCategories', JSON.stringify(customCategories));
+                document.getElementById('newLabel').value = '';
+                renderCustomUI();
+            }
+
+            window.removeCustomCategory = function(id, event) {
+                event.stopPropagation();
+                if(!confirm("Remover?")) return;
+                customCategories = customCategories.filter(c => c.id !== id);
+                localStorage.setItem('customCategories', JSON.stringify(customCategories));
+                renderCustomUI();
+            }
+
+            function renderCustomUI() {
+                const palette = document.getElementById('palette-container');
+                palette.querySelectorAll('.btn-custom-dynamic').forEach(el => el.remove());
+                customCategories.forEach(cat => {
+                    const btn = document.createElement('button');
+                    btn.className = 'tool-btn btn-custom-dynamic';
+                    btn.style.backgroundColor = cat.color;
+                    btn.innerHTML = `${cat.label} <span class="btn-delete" onclick="removeCustomCategory('${cat.id}', event)">×</span>`;
+                    btn.onclick = () => selectTool(cat.id, 'custom', cat.color);
+                    palette.appendChild(btn);
+                });
+                const legendRow = document.getElementById('legend-row-1');
+                legendRow.querySelectorAll('.legend-custom-dynamic').forEach(el => el.remove());
+                customCategories.forEach(cat => {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item legend-custom-dynamic';
+                    item.innerHTML = `<span class="color-box" style="background:${cat.color}"></span> ${cat.label}`;
+                    legendRow.appendChild(item);
+                });
+            }
+
+            window.selectTool = function(tool, type, hexColor = null) {
+                currentTool = tool; currentType = type;
+                if (type === 'custom') customColorHex = hexColor;
+                document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+                
+                // Highlight button
+                let btns = document.querySelectorAll('.tool-btn');
+                btns.forEach(b => {
+                    if(b.innerText.includes(tool) || (type === 'custom' && b.innerHTML.includes(tool))) b.classList.add('active');
+                });
+            }
+
+            function applyTool(element, id) {
+                if (currentType === 'eraser') {
+                    element.removeAttribute('data-color'); element.removeAttribute('data-pattern'); element.removeAttribute('data-text'); element.removeAttribute('data-is-custom'); element.style.backgroundColor = '';
+                    element.querySelector('.day-tags').innerHTML = '';
+                    saveData(id, 'none');
+                } else if (currentType === 'color') {
+                    element.removeAttribute('style'); element.removeAttribute('data-is-custom');
+                    element.setAttribute('data-color', currentTool);
+                    saveColor(id, currentTool, false);
+                } else if (currentType === 'custom') {
+                    element.setAttribute('data-color', 'custom'); element.setAttribute('data-is-custom', 'true');
+                    element.style.backgroundColor = customColorHex;
+                    saveColor(id, customColorHex, true);
+                } else if (currentType === 'pattern') {
+                    toggleAttr(element, 'data-pattern', currentTool); saveAttr(id, 'pattern', element.getAttribute('data-pattern'));
+                } else if (currentType === 'text') {
+                    toggleAttr(element, 'data-text', 'red'); saveAttr(id, 'text', element.getAttribute('data-text'));
+                } else if (currentType === 'tag') {
+                    handleTags(element, id);
+                }
+                updateCounters(); 
+            }
+
+            function toggleAttr(el, attr, val) {
+                if (el.getAttribute(attr) === val) el.removeAttribute(attr); else el.setAttribute(attr, val);
+            }
+
+            function handleTags(element, id) {
+                const tagContainer = element.querySelector('.day-tags');
+                let currentTags = Array.from(tagContainer.children).map(c => c.innerText);
+                if (currentTags.includes(currentTool)) currentTags = currentTags.filter(t => t !== currentTool);
+                else currentTags.push(currentTool);
+                renderTags(tagContainer, currentTags);
+                const d = loadItemData(id); d.tags = currentTags; localStorage.setItem(id, JSON.stringify(d));
+            }
+
+            function renderTags(container, tags) {
+                container.innerHTML = '';
+                tags.forEach(tag => { const span = document.createElement('span'); span.innerText = tag; span.classList.add('tag-badge'); container.appendChild(span); });
+            }
+
+            function loadItemData(id) { return JSON.parse(localStorage.getItem(id)) || {}; }
+            function saveColor(id, value, isCustom) { const d = loadItemData(id); d.color = value; d.isCustom = isCustom; localStorage.setItem(id, JSON.stringify(d)); }
+            function saveAttr(id, key, value) { const d = loadItemData(id); if (value) d[key] = value; else delete d[key]; localStorage.setItem(id, JSON.stringify(d)); }
+            function saveData(id, color) { if(color === 'none') localStorage.setItem(id, JSON.stringify({ color: 'none' })); }
+
+            function loadData() {
+                const savedName = localStorage.getItem('schoolName');
+                if(savedName) { schoolInput.value = savedName; schoolDisplay.innerText = savedName; }
+                const days = document.querySelectorAll('.day:not(.empty)');
+                days.forEach(day => {
+                    const id = day.id; 
+                    let data = JSON.parse(localStorage.getItem(id) || '{}');
+                    if (data.color) {
+                        if (data.isCustom) { day.setAttribute('data-color', 'custom'); day.setAttribute('data-is-custom', 'true'); day.style.backgroundColor = data.color; }
+                        else if (data.color !== 'none') day.setAttribute('data-color', data.color);
+                        else day.removeAttribute('data-color');
+                    }
+                    if (data.pattern) day.setAttribute('data-pattern', data.pattern);
+                    if (data.text) day.setAttribute('data-text', data.text);
+                    if (data.tags && data.tags.length > 0) renderTags(day.querySelector('.day-tags'), data.tags);
+                });
+                updateCounters(); 
+            }
+
+            function updateCounters() {
+                // 1. Contagem Mês
+                const monthCards = document.querySelectorAll('.month-card');
+                monthCards.forEach((card, index) => {
+                    const letivoCount = card.querySelectorAll('.day[data-color="letivo"]').length;
+                    card.querySelector('.month-title').innerHTML = `${months[index]} <span class="month-count">${letivoCount} dias</span>`;
+                });
+
+                // 2. Contagem Bimestre Dinâmico
+                const stats = calculateBimesters();
+                for(let i=0; i<4; i++) {
+                    document.getElementById(`period-b${i+1}`).innerText = stats.bimesters[i].label;
+                    document.getElementById(`count-b${i+1}`).innerText = stats.bimesters[i].count;
+                }
+                document.getElementById('count-total').innerText = stats.total;
+            }
+            
+            generateCalendar();
+
+        } catch (fatalError) {
+            alert("Erro crítico: " + fatalError.message);
+        }
+    </script>
+</body>
+</html>
